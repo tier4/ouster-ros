@@ -108,9 +108,13 @@ class OusterCloud : public OusterProcessingNodeBase {
         std::vector<LidarScanProcessor> processors;
         if (check_token(tokens, "PCL")) {
             lidar_pubs.resize(num_returns);
+            lidar_ex_pubs.resize(num_returns);
             for (int i = 0; i < num_returns; ++i) {
                 lidar_pubs[i] = create_publisher<sensor_msgs::msg::PointCloud2>(
                     topic_for_return("points", i), selected_qos);
+                lidar_ex_pubs[i] =
+                    create_publisher<sensor_msgs::msg::PointCloud2>(
+                        topic_for_return("points_ex", i), selected_qos);
             }
             processors.push_back(PointCloudProcessor::create(
                 info, tf_bcast.point_cloud_frame_id(),
@@ -118,6 +122,13 @@ class OusterCloud : public OusterProcessingNodeBase {
                 [this](PointCloudProcessor::OutputType msgs) {
                     for (size_t i = 0; i < msgs.size(); ++i)
                         lidar_pubs[i]->publish(*msgs[i]);
+                }));
+            processors.push_back(PointCloudProcessor::create_ex(
+                info, tf_bcast.point_cloud_frame_id(),
+                tf_bcast.apply_lidar_to_sensor_transform(),
+                [this](PointCloudProcessor::OutputType msgs) {
+                    for (size_t i = 0; i < msgs.size(); ++i)
+                        lidar_ex_pubs[i]->publish(*msgs[i]);
                 }));
         }
 
@@ -165,6 +176,8 @@ class OusterCloud : public OusterProcessingNodeBase {
     rclcpp::Subscription<PacketMsg>::SharedPtr lidar_packet_sub;
     std::vector<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr>
         lidar_pubs;
+    std::vector<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr>
+        lidar_ex_pubs;
     std::vector<rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr>
         scan_pubs;
 

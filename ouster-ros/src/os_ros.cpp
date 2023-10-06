@@ -190,6 +190,46 @@ void copy_scan_to_cloud(ouster_ros::Cloud& cloud, const ouster::LidarScan& ls,
     }
 }
 
+template <typename PointT, typename RangeT, typename SignalT>
+void copy_scan_to_cloud(ouster_ros::VeloCloud& cloud,
+                        const ouster::LidarScan& ls,
+                        uint64_t scan_ts, const PointT& points,
+                        const ouster::img_t<RangeT>& range,
+                        const ouster::img_t<SignalT>& signal,
+                        const ouster::PointsF& direction,
+                        const std::vector<int>& pixel_shift_by_row) {
+    auto timestamp = ls.timestamp();
+    const auto dst = range.data();
+    const auto sg = signal.data();
+    const auto dir = direction.data();
+
+#ifdef __OUSTER_UTILIZE_OPENMP__
+#pragma omp parallel for collapse(2)
+#endif
+    for (auto u = 0; u < ls.h; u++) {
+        for (auto v = 0; v < ls.w; v++) {
+            const auto v_shift = (v + ls.w - pixel_shift_by_row[u]) % ls.w;
+            auto ts = timestamp[v_shift]; ts = ts > scan_ts ? ts - scan_ts : 0UL;
+            const auto src_idx = u * ls.w + v_shift;
+            const auto tgt_idx = u * ls.w + v;
+            const auto xyz = points.row(src_idx);
+            cloud.points[tgt_idx] = ouster_ros::PointXYZIRADT{
+                {static_cast<float>(xyz(0)),
+                 static_cast<float>(xyz(1)),
+                 static_cast<float>(xyz(2)),
+                 1.0f},
+                static_cast<float>(sg[src_idx]),        //intensity
+                static_cast<uint16_t>(u),               //ring
+                static_cast<float>(dir[src_idx]),       //azimuth
+                static_cast<float>(dst[src_idx]),       //distance
+                1,                                      //return_type
+                static_cast<double>(ts),                //timestamp
+
+            };
+        }
+    }
+}
+
 template <typename PointT, typename RangeT, typename ReflectivityT,
           typename NearIrT, typename SignalT>
 void copy_scan_to_cloud_destaggered(
@@ -289,6 +329,33 @@ void scan_to_cloud_f(ouster::PointsF& points,
 
     copy_scan_to_cloud(cloud, ls, scan_ts, points, range, reflectivity, near_ir,
                        signal);
+}
+
+//tier4 PCL type 
+void scan_to_cloud_f(ouster::PointsF& points,
+                     const ouster::PointsF& lut_direction,
+                     const ouster::PointsF& lut_offset, uint64_t scan_ts,
+                     const ouster::LidarScan& ls, ouster_ros::VeloCloud& cloud,
+                     const std::vector<int>& pixel_shift_by_row,
+                     int return_index) {
+    bool second = (return_index == 1);
+
+    assert(cloud.width == static_cast<std::uint32_t>(ls.w) &&
+           cloud.height == static_cast<std::uint32_t>(ls.h) &&
+           "point cloud and lidar scan size mismatch");
+
+    // across supported lidar profiles range is always 32-bit
+    auto range_channel_field =
+        second ? sensor::ChanField::RANGE2 : sensor::ChanField::RANGE;
+    ouster::img_t<uint32_t> range = ls.field<uint32_t>(range_channel_field);
+
+    ouster::img_t<uint32_t> signal = impl::get_or_fill_zero<uint32_t>(
+        impl::suitable_return(sensor::ChanField::SIGNAL, second), ls);
+
+    ouster::cartesianT(points, range, lut_direction, lut_offset);
+
+    copy_scan_to_cloud(cloud, ls, scan_ts, points, range,
+                       signal, lut_direction, pixel_shift_by_row);
 }
 
 void scan_to_cloud_f_destaggered(ouster_ros::Cloud& cloud,
