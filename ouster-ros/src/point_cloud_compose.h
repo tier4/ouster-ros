@@ -124,10 +124,14 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                      bool organized = false, bool destagger = true,
                      int rows_step = 1) {
     auto ls_tuple = make_lidar_scan_tuple<0, N, PROFILE>(ls);
-    auto timestamp = ls.timestamp();
+    Eigen::Array<uint64_t, Eigen::Dynamic, 1> timestamp_flat = ls.timestamp().reshaped().eval();
 
     if (!organized) cloud.clear();
     cloud.is_dense = true;
+    static const auto signal_flat =
+        ls.field<uint16_t>(sensor::ChanField::SIGNAL).reshaped().eval();
+    static const auto range_flat =
+        ls.field<uint32_t>(sensor::ChanField::RANGE).reshaped().eval();
 
     for (auto u = 0; u < ls.h; u += rows_step) {
         for (auto v = 0; v < ls.w; ++v) {   // TODO[UN]: consider cols_step in future
@@ -142,8 +146,8 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
             // then timestamps needs to be staggered.
             auto ts_idx =
                 destagger ? v : (v + ls.w + pixel_shift_by_row[u]) % ls.w;
-            auto ts =
-                timestamp[ts_idx] > scan_ts ? timestamp[ts_idx] - scan_ts : 0UL;
+            uint64_t ts_raw = timestamp_flat(ts_idx);  
+            uint32_t ts = ts_raw > scan_ts ? ts_raw - scan_ts : 0U;
 
             if (organized) {
                 // set is_dense to false if any of the xyz coordinates is NaN
@@ -155,29 +159,42 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                     cloud.points.emplace_back();
             }
 
+            if constexpr (std::is_same_v<PointT, PointXYZIRADT>) {
+                auto& pt = cloud.points[tgt_idx];
+                pt.x = static_cast<float>(xyz(0));
+                pt.y = static_cast<float>(xyz(1));
+                pt.z = static_cast<float>(xyz(2));
+                pt.intensity = static_cast<float>(signal_flat(src_idx));
+                pt.ring = static_cast<uint16_t>(u);
+                pt.distance = static_cast<float>(range_flat(src_idx)) * 0.001f;
+                pt.azimuth = static_cast<float>(v) / static_cast<float>(ls.w) * 360.0f;
+                pt.return_type = 0;
+                pt.time_stamp = static_cast<double>(ts) * 1e-9;
 
-            // if target point and staging point has matching type bind the
-            // target directly and avoid performing transform_point at the end
-            auto& pt = CondBinaryBind<std::is_same_v<PointT, PointS>>::run(
-                cloud.points[tgt_idx], staging_point);
-            // all native point types have x, y, z, t and ring values
-            pt.x = static_cast<decltype(pt.x)>(xyz(0));
-            pt.y = static_cast<decltype(pt.y)>(xyz(1));
-            pt.z = static_cast<decltype(pt.z)>(xyz(2));
-            // TODO: in the future we could probably skip copying t and ring
-            // values if known before hand that the target point cloud does
-            // not have a field to hold the timestamp or a ring for example the
-            // case of pcl::PointXYZ or pcl::PointXYZI.
-            pt.t = static_cast<uint32_t>(ts);
-            pt.ring = static_cast<uint16_t>(u);
-            copy_lidar_scan_fields_to_point<0>(pt, ls_tuple, src_idx);
-            // only perform point transform operation when PointT, and PointS
-            // don't match
-            CondBinaryOp<!std::is_same_v<PointT, PointS>>::run(
-                cloud.points[tgt_idx], staging_point,
-                [](auto& tgt_pt, const auto& src_pt) {
-                    point::transform(tgt_pt, src_pt);
-                });
+            }else{
+                // if target point and staging point has matching type bind the
+                // target directly and avoid performing transform_point at the end
+                auto& pt = CondBinaryBind<std::is_same_v<PointT, PointS>>::run(
+                    cloud.points[tgt_idx], staging_point);
+                // all native point types have x, y, z, t and ring values
+                pt.x = static_cast<decltype(pt.x)>(xyz(0));
+                pt.y = static_cast<decltype(pt.y)>(xyz(1));
+                pt.z = static_cast<decltype(pt.z)>(xyz(2));
+                // TODO: in the future we could probably skip copying t and ring
+                // values if known before hand that the target point cloud does
+                // not have a field to hold the timestamp or a ring for example the
+                // case of pcl::PointXYZ or pcl::PointXYZI.
+                pt.t = static_cast<uint32_t>(ts);
+                pt.ring = static_cast<uint16_t>(u);
+                copy_lidar_scan_fields_to_point<0>(pt, ls_tuple, src_idx);
+                // only perform point transform operation when PointT, and PointS
+                // don't match
+                CondBinaryOp<!std::is_same_v<PointT, PointS>>::run(
+                    cloud.points[tgt_idx], staging_point,
+                    [](auto& tgt_pt, const auto& src_pt) {
+                        point::transform(tgt_pt, src_pt);
+                    });
+            }
         }
     }
 }

@@ -82,6 +82,12 @@ class PointCloudProcessor {
         pcl::toPCLPointCloud2(pcl_cloud, staging_pcl_pc2);
         pcl_conversions::moveFromPCL(staging_pcl_pc2, cloud);
     }
+    // void pcl_toROSMsg(const ouster_ros::VeloCloud& pcl_cloud,
+    //                   sensor_msgs::msg::PointCloud2& cloud) {
+    //     // TODO: remove the staging step in the future
+    //     pcl::toPCLPointCloud2(pcl_cloud, staging_pcl_pc3);
+    //     pcl_conversions::moveFromPCL(staging_pcl_pc3, cloud);
+    // }
 
     void process(const ouster::LidarScan& lidar_scan, uint64_t scan_ts,
                  const rclcpp::Time& msg_ts) {
@@ -103,6 +109,25 @@ class PointCloudProcessor {
 
         if (post_processing_fn) post_processing_fn(pc_msgs);
     }
+    // void process_ex(const ouster::LidarScan& lidar_scan, uint64_t scan_ts,
+    //              const rclcpp::Time& msg_ts) {
+    //     for (int i = 0; i < static_cast<int>(pc_msgs.size()); ++i) {
+    //         auto range_channel = static_cast<sensor::ChanField>(sensor::ChanField::RANGE + i);
+    //         auto range = lidar_scan.field<uint32_t>(range_channel);
+    //         auto range_masked = mask.size() != 0 ? range * mask : range;
+    //         ouster::cartesianT(points, range_masked, lut_direction, lut_offset,
+    //                            min_range_, max_range_,
+    //                            std::numeric_limits<float>::quiet_NaN());
+    //         scan_to_cloud_f(velo_cloud, points, scan_ts, lidar_scan,
+    //                                     pixel_shift_by_row, i);
+
+    //         pcl_toROSMsg(velo_cloud, *pc_msgs[i]);
+    //         pc_msgs[i]->header.stamp = msg_ts;
+    //         pc_msgs[i]->header.frame_id = frame;
+    //     }
+
+    //     if (post_processing_fn) post_processing_fn(pc_msgs);
+    // }
 
    public:
     static LidarScanProcessor create(const ouster::sensor::sensor_info& info,
@@ -122,11 +147,29 @@ class PointCloudProcessor {
             handler->process(lidar_scan, scan_ts, msg_ts);
         };
     }
+    // static LidarScanProcessor create_ex(const ouster::sensor::sensor_info& info,
+    //                                  const std::string& frame,
+    //                                  bool apply_lidar_to_sensor_transform,
+    //                                  uint32_t min_range, uint32_t max_range,
+    //                                  int rows_step, const std::string& mask_path,
+    //                                  ScanToCloudFn scan_to_cloud_fn_,
+    //                                  PointCloudProcessor_PostProcessingFn post_processing_fn) {
+    //     auto handler = std::make_shared<PointCloudProcessor>(
+    //         info, frame, apply_lidar_to_sensor_transform,
+    //         min_range, max_range, rows_step, mask_path,
+    //         scan_to_cloud_fn_, post_processing_fn);
+
+    //     return [handler](const ouster::LidarScan& lidar_scan, uint64_t scan_ts,
+    //                      const rclcpp::Time& msg_ts) {
+    //         handler->process_ex(lidar_scan, scan_ts, msg_ts);
+    //     };
+    // }
 
    private:
     // a buffer used for staging during the conversion
     // from a PCL point cloud to a ros point cloud message
     pcl::PCLPointCloud2 staging_pcl_pc2;
+    // pcl::PCLPointCloud2 staging_pcl_pc3;
 
     std::string frame;
 
@@ -135,6 +178,7 @@ class PointCloudProcessor {
     ouster::PointsF points;
     std::vector<int> pixel_shift_by_row;
     ouster_ros::Cloud<PointT> cloud;
+    // ouster_ros::VeloCloud velo_cloud;
     uint32_t min_range_;
     uint32_t max_range_;
     PointCloudProcessor_OutputType pc_msgs;

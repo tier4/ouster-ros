@@ -131,7 +131,7 @@ class OusterCloud : public OusterProcessingNodeBase {
             lidar_pubs.resize(num_returns);
             for (int i = 0; i < num_returns; ++i) {
                 lidar_pubs[i] = create_publisher<sensor_msgs::msg::PointCloud2>(
-                    topic_for_return("points", i), selected_qos);
+                    topic_for_return("points_ex", i), selected_qos);
             }
 
             auto point_type = get_parameter("point_type").as_string();

@@ -131,7 +131,8 @@ class PointCloudProcessorFactory {
    public:
     static bool point_type_requires_intensity(const std::string& point_type) {
         return point_type == "xyzi" || point_type == "xyzir" ||
-               point_type == "original" || point_type == "o_xyzi";
+               point_type == "original" || point_type == "o_xyzi" || 
+               point_type == "xyiradt";
     }
 
     static bool profile_has_intensity(UDPProfileLidar profile) {
@@ -206,7 +207,13 @@ class PointCloudProcessorFactory {
                 info, frame, apply_lidar_to_sensor_transform,
                 organized, destagger, min_range, max_range, rows_step,
                 mask_path, post_processing_fn);
+        } else if (point_type == "xyziradt") {
+            return make_point_cloud_processor<ouster_ros::PointXYZIRADT>(
+                info, frame, apply_lidar_to_sensor_transform,
+                organized, destagger, min_range, max_range, rows_step,
+                mask_path, post_processing_fn);
         }
+
 
         throw std::runtime_error(
             "Un-supported point type used: " + point_type + "!");
