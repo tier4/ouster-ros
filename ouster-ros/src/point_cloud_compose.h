@@ -128,10 +128,10 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
 
     if (!organized) cloud.clear();
     cloud.is_dense = true;
-    static const auto signal_flat =
-        ls.field<uint16_t>(sensor::ChanField::SIGNAL).reshaped().eval();
-    static const auto range_flat =
-        ls.field<uint32_t>(sensor::ChanField::RANGE).reshaped().eval();
+    const auto& signal_flat =
+        ls.field<uint16_t>(sensor::ChanField::SIGNAL);
+    const auto& range_flat =
+        ls.field<uint32_t>(sensor::ChanField::RANGE);
 
     for (auto u = 0; u < ls.h; u += rows_step) {
         for (auto v = 0; v < ls.w; ++v) {   // TODO[UN]: consider cols_step in future
@@ -164,11 +164,11 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                 pt.x = static_cast<float>(xyz(0));
                 pt.y = static_cast<float>(xyz(1));
                 pt.z = static_cast<float>(xyz(2));
-                pt.intensity = static_cast<float>(signal_flat(src_idx));
+                pt.intensity = static_cast<float>(signal_flat(u, v_shift));
                 pt.ring = static_cast<uint16_t>(u);
-                pt.distance = static_cast<float>(range_flat(src_idx)) * 0.001f;
+                pt.distance = static_cast<float>(range_flat(u, v_shift)) * 0.001f;
                 pt.azimuth = static_cast<float>(v) / static_cast<float>(ls.w) * 360.0f;
-                pt.return_type = 0;
+                pt.return_type = 1;
                 pt.time_stamp = static_cast<double>(ts) * 1e-9;
 
             }else{
