@@ -64,7 +64,8 @@
     xyz,
     xyzi,
     o_xyzi,
-    xyzir
+    xyzir,
+    xyzircaedt
     }"/>
 
   <arg name="organized" default="true"

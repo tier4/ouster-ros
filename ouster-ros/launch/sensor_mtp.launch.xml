@@ -83,7 +83,8 @@
     xyz,
     xyzi,
     o_xyzi,
-    xyzir
+    xyzir,
+    xyzircaedt
     }"/>
 
   <arg name="azimuth_window_start" default="0" description="azimuth window start;
