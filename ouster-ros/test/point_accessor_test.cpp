@@ -19,6 +19,9 @@ class PointAccessorTest : public ::testing::Test {
         pt_xyz = pcl::_PointXYZ{0.0f, 1.0f, 2.0f, 1.0f};
         pt_xyzi = pcl::_PointXYZI{{0.0f, 1.0f, 2.0f, 1.0}, 3.0f};
         pt_xyzir = ouster_ros::_PointXYZIR{{0.0f, 1.0f, 2.0f, 1.0f}, 3.0f, 4};
+        pt_xyzircaedt = ouster_ros::_PointXYZIRCAEDT{{0.0f, 1.0f, 2.0f, 1.0f}, 
+                                                    50, 1, 4, 
+                                                    0.5f, 0.5f, 10.0f, 1000000};
 
         pt_legacy = ouster_ros::_Point_LEGACY{
             {0.0f, 1.0f, 2.0f, 1.0f},   // x, y, z, w
@@ -57,6 +60,7 @@ class PointAccessorTest : public ::testing::Test {
     static pcl::PointXYZ pt_xyz;
     static pcl::PointXYZI pt_xyzi;
     static PointXYZIR pt_xyzir;
+    static PointXYZIRCAEDT pt_xyzircaedt;
     // native point types
     static Point_LEGACY pt_legacy;
     static Point_RNG19_RFL8_SIG16_NIR16_DUAL pt_rg19_rf8_sg16_nr16_dual;
@@ -70,6 +74,7 @@ class PointAccessorTest : public ::testing::Test {
 pcl::PointXYZ PointAccessorTest::pt_xyz;
 pcl::PointXYZI PointAccessorTest::pt_xyzi;
 PointXYZIR PointAccessorTest::pt_xyzir;
+PointXYZIRCAEDT PointAccessorTest::pt_xyzircaedt;
 // native point types
 Point_LEGACY PointAccessorTest::pt_legacy;
 Point_RNG19_RFL8_SIG16_NIR16_DUAL PointAccessorTest::pt_rg19_rf8_sg16_nr16_dual;
@@ -83,6 +88,7 @@ TEST_F(PointAccessorTest, ElementCount) {
     EXPECT_EQ(point::size(pt_xyz), 3U);
     EXPECT_EQ(point::size(pt_xyzi), 4U);
     EXPECT_EQ(point::size(pt_xyzir), 5U);
+    EXPECT_EQ(point::size(pt_xyzircaedt), 10U);
     // all native sensor point types has {x, y, z, t and ring} fields
     EXPECT_EQ(point::size(pt_legacy), 5 + Profile_LEGACY.size());
     EXPECT_EQ(point::size(pt_rg19_rf8_sg16_nr16_dual),
@@ -115,7 +121,17 @@ TEST_F(PointAccessorTest, ElementGetSet) {
     EXPECT_EQ(point::get<2>(pt_xyzir), 2.0f);
     EXPECT_EQ(point::get<3>(pt_xyzir), 3.0f);
     EXPECT_EQ(point::get<4>(pt_xyzir), 4);
-
+    // ouster_ros::PointXYZIRCAEDT
+    EXPECT_EQ(point::get<0>(pt_xyzircaedt), 0.0f);
+    EXPECT_EQ(point::get<1>(pt_xyzircaedt), 1.0f);
+    EXPECT_EQ(point::get<2>(pt_xyzircaedt), 2.0f);
+    EXPECT_EQ(point::get<3>(pt_xyzircaedt), 50);
+    EXPECT_EQ(point::get<4>(pt_xyzircaedt), 1);
+    EXPECT_EQ(point::get<5>(pt_xyzircaedt), 4);
+    EXPECT_EQ(point::get<6>(pt_xyzircaedt), 0.5f);
+    EXPECT_EQ(point::get<7>(pt_xyzircaedt), 0.5f);
+    EXPECT_EQ(point::get<8>(pt_xyzircaedt), 10.0f);
+    EXPECT_EQ(point::get<9>(pt_xyzircaedt), 1000000);
     // pcl::PointXYZ
     point::get<0>(pt_xyz) = 10.0f;
     point::get<1>(pt_xyz) = 11.0f;
@@ -131,7 +147,17 @@ TEST_F(PointAccessorTest, ElementGetSet) {
     point::get<2>(pt_xyzir) = 12.0f;
     point::get<3>(pt_xyzir) = 13.0f;
     point::get<4>(pt_xyzir) = 14;
-
+    // ouster_ros::PointXYZIRCAEDT
+    point::get<0>(pt_xyzircaedt) = 10.0f;
+    point::get<1>(pt_xyzircaedt) = 11.0f;
+    point::get<2>(pt_xyzircaedt) = 12.0f;
+    point::get<3>(pt_xyzircaedt) = 0;
+    point::get<4>(pt_xyzircaedt) = 0;
+    point::get<5>(pt_xyzircaedt) = 100;
+    point::get<6>(pt_xyzircaedt) = 1.0f;
+    point::get<7>(pt_xyzircaedt) = 0.6f;
+    point::get<8>(pt_xyzircaedt) = 20.0f;
+    point::get<9>(pt_xyzircaedt) = 2000000;
     // pcl::PointXYZ
     EXPECT_EQ(point::get<0>(pt_xyz), 10.0f);
     EXPECT_EQ(point::get<1>(pt_xyz), 11.0f);
@@ -147,6 +173,17 @@ TEST_F(PointAccessorTest, ElementGetSet) {
     EXPECT_EQ(point::get<2>(pt_xyzir), 12.0f);
     EXPECT_EQ(point::get<3>(pt_xyzir), 13.0f);
     EXPECT_EQ(point::get<4>(pt_xyzir), 14);
+    // ouster_ros::PointXYZIRCAEDT
+    EXPECT_EQ(point::get<0>(pt_xyzircaedt), 10.0f);
+    EXPECT_EQ(point::get<1>(pt_xyzircaedt), 11.0f);
+    EXPECT_EQ(point::get<2>(pt_xyzircaedt), 12.0f);
+    EXPECT_EQ(point::get<3>(pt_xyzircaedt), 200);
+    EXPECT_EQ(point::get<4>(pt_xyzircaedt), 2);
+    EXPECT_EQ(point::get<5>(pt_xyzircaedt), 100);
+    EXPECT_EQ(point::get<6>(pt_xyzircaedt), 2.0f);
+    EXPECT_EQ(point::get<7>(pt_xyzircaedt), 0.6f);
+    EXPECT_EQ(point::get<8>(pt_xyzircaedt), 40.0f);
+    EXPECT_EQ(point::get<9>(pt_xyzircaedt), 3000000);
 }
 
 template <std::size_t N, typename PointT>
@@ -161,6 +198,7 @@ TEST_F(PointAccessorTest, ExpectElementValueSameAsIndex) {
     expect_element_equals_index<point::size(pt_xyz)>(pt_xyz);
     expect_element_equals_index<point::size(pt_xyzi)>(pt_xyzi);
     expect_element_equals_index<point::size(pt_xyzir)>(pt_xyzir);
+    expect_element_equals_index<point::size(pt_xyzircaedt)>(pt_xyzircaedt);
     // native sensor point types
     expect_element_equals_index<point::size(pt_legacy)>(pt_legacy);
     expect_element_equals_index<point::size(pt_rg19_rf8_sg16_nr16_dual)>(
@@ -195,6 +233,8 @@ TEST_F(PointAccessorTest, ExpectPointElementValueIncrementedByValue) {
     expect_value_increased_by_value<point::size(pt_xyzi)>(pt_xyzi, increment);
     increment_by_value<point::size(pt_xyzir)>(pt_xyzir, increment);
     expect_value_increased_by_value<point::size(pt_xyzir)>(pt_xyzir, increment);
+    increment_by_value<point::size(pt_xyzircaedt)>(pt_xyzircaedt, increment);
+    expect_value_increased_by_value<point::size(pt_xyzircaedt)>(pt_xyzircaedt, increment);
     // // native sensor point types
     increment_by_value<point::size(pt_legacy)>(pt_legacy, increment);
     expect_value_increased_by_value<point::size(pt_legacy)>(pt_legacy,
