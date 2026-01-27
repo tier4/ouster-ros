@@ -102,6 +102,79 @@ struct PointXYZIR : public _PointXYZIR {
     }
 };
 
+/*
+ * Same as Autoware point cloud type
+ */
+struct EIGEN_ALIGN16 _PointXYZIRCAEDT {
+    PCL_ADD_POINT4D;
+    uint8_t intensity;        // Intensity
+    uint8_t return_type;      // Return type
+    uint16_t ring;            // Channel == ring
+    float azimuth;            // Azimuth
+    float elevation;          // Elevation
+    float range;              // Distance == range
+    uint32_t time;            // Timestamp
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+struct PointXYZIRCAEDT : public _PointXYZIRCAEDT {
+
+    inline PointXYZIRCAEDT(const _PointXYZIRCAEDT& pt)
+    {
+      x = pt.x;
+      y = pt.y;
+      z = pt.z;
+      data[3] = 1.0f;
+      intensity = pt.intensity;
+      return_type = pt.return_type;
+      ring = pt.ring;
+      azimuth = pt.azimuth;
+      elevation = pt.elevation;
+      range = pt.range;
+      time = pt.time;
+    }
+
+    inline PointXYZIRCAEDT()
+    {
+      x = y = z = 0.0f;
+      data[3] = 1.0f;
+      intensity = 0.0f;
+      return_type = 0;
+      ring = 0;
+      azimuth = 0.0f;
+      elevation = 0.0f;
+      range = 0.0f;
+      time = 0.0f;
+    }
+
+    inline const auto as_tuple() const {
+        return std::tie(x, y, z, 
+                        intensity, 
+                        return_type, 
+                        ring, 
+                        azimuth, 
+                        elevation, 
+                        range, 
+                        time);
+    }
+
+    inline auto as_tuple() {
+        return std::tie(x, y, z, 
+                        intensity, 
+                        return_type, 
+                        ring, 
+                        azimuth, 
+                        elevation, 
+                        range, 
+                        time);
+    }
+
+    template<size_t I>
+    inline auto& get() {
+        return std::get<I>(as_tuple());
+    }
+};
+
 }   // namespace ouster_ros
 
 // clang-format off
@@ -120,6 +193,20 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(ouster_ros::PointXYZIR,
     (float, z, z)
     (float, intensity, intensity)
     (std::uint16_t, ring, ring)
+)
+
+/* Autoware point type */
+POINT_CLOUD_REGISTER_POINT_STRUCT(ouster_ros::PointXYZIRCAEDT,
+    (float, x, x)
+    (float, y, y)
+    (float, z, z)
+    (std::uint8_t, intensity, intensity)        // Intensity
+    (std::uint8_t, return_type, return_type)    // Return type
+    (std::uint16_t, ring, channel)              // Channel == ring
+    (float, azimuth, azimuth)                   // Azimuth
+    (float, elevation, elevation)               // Elevation
+    (float, range, distance)                    // Distance == range
+    (std::uint32_t, time, timestamp)            // Timestamp
 )
 
 // clang-format on
