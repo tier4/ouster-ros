@@ -122,7 +122,10 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                      const ouster::LidarScan& ls,
                      const std::vector<int>& pixel_shift_by_row,
                      bool organized = false, bool destagger = true,
-                     int rows_step = 1) {
+                     int rows_step = 1,
+                     const std::vector<double>* beam_azimuth_angles = nullptr,
+                     const std::vector<double>* beam_altitude_angles = nullptr,
+                     int return_index = 0) {
     auto ls_tuple = make_lidar_scan_tuple<0, N, PROFILE>(ls);
     auto timestamp = ls.timestamp();
 
@@ -171,6 +174,7 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
             pt.t = static_cast<uint32_t>(ts);
             pt.ring = static_cast<uint16_t>(u);
             copy_lidar_scan_fields_to_point<0>(pt, ls_tuple, src_idx);
+
             // only perform point transform operation when PointT, and PointS
             // don't match
             CondBinaryOp<!std::is_same_v<PointT, PointS>>::run(
@@ -178,6 +182,43 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                 [](auto& tgt_pt, const auto& src_pt) {
                     point::transform(tgt_pt, src_pt);
                 });
+
+            // Set Autoware-specific fields for PointXYZIRCAEDT after transform
+            // azimuth angle (in radians)
+            if constexpr (point::has_azimuth_v<PointT>) {
+                if (beam_azimuth_angles && v < beam_azimuth_angles->size()) {
+                    cloud.points[tgt_idx].azimuth =
+                        static_cast<float>((*beam_azimuth_angles)[v]);
+                } else {
+                    cloud.points[tgt_idx].azimuth = 0.0f;
+                }
+            }
+
+            // elevation angle (in radians)
+            if constexpr (point::has_elevation_v<PointT>) {
+                if (beam_altitude_angles && u < beam_altitude_angles->size()) {
+                    cloud.points[tgt_idx].elevation =
+                        static_cast<float>((*beam_altitude_angles)[u]);
+                } else {
+                    cloud.points[tgt_idx].elevation = 0.0f;
+                }
+            }
+
+            // range in meters (computed from xyz)
+            if constexpr (point::has_range_v<PointT>) {
+                const auto& xyz_tuple = cloud.points[tgt_idx];
+                const float x = xyz_tuple.x;
+                const float y = xyz_tuple.y;
+                const float z = xyz_tuple.z;
+                cloud.points[tgt_idx].range =
+                    std::sqrt(x * x + y * y + z * z);
+            }
+
+            // return_type (0 for first return, 1 for second, etc.)
+            if constexpr (point::has_return_type_v<PointT>) {
+                cloud.points[tgt_idx].return_type =
+                    static_cast<uint8_t>(return_index);
+            }
         }
     }
 }

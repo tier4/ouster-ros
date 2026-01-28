@@ -12,23 +12,28 @@ class PointCloudProcessorFactory {
     static typename PointCloudProcessor<PointT>::ScanToCloudFn
     make_scan_to_cloud_fn(const sensor::sensor_info& info,
                           bool organized, bool destagger, int rows_step) {
+        // Capture sensor_info to access beam angles for Autoware compatibility
+        auto beam_azimuth = std::make_shared<std::vector<double>>(info.beam_azimuth_angles);
+        auto beam_altitude = std::make_shared<std::vector<double>>(info.beam_altitude_angles);
+
         switch (info.format.udp_profile_lidar) {
             case UDPProfileLidar::PROFILE_LIDAR_LEGACY:
-                return [organized, destagger, rows_step](
+                return [organized, destagger, rows_step, beam_azimuth, beam_altitude](
                     ouster_ros::Cloud<PointT>& cloud,
                     const ouster::PointsF& points, uint64_t scan_ts,
                     const ouster::LidarScan& ls,
                     const std::vector<int>& pixel_shift_by_row,
-                    int /*return_index*/) {
+                    int return_index) {
 
                     Point_LEGACY staging_pt;
                     scan_to_cloud_f<Profile_LEGACY.size(), Profile_LEGACY>(
                         cloud, staging_pt, points, scan_ts, ls,
-                        pixel_shift_by_row, organized, destagger, rows_step);
+                        pixel_shift_by_row, organized, destagger, rows_step,
+                        beam_azimuth.get(), beam_altitude.get(), return_index);
                 };
 
             case UDPProfileLidar::PROFILE_RNG19_RFL8_SIG16_NIR16_DUAL:
-                return [organized, destagger, rows_step](
+                return [organized, destagger, rows_step, beam_azimuth, beam_altitude](
                     ouster_ros::Cloud<PointT>& cloud,
                     const ouster::PointsF& points, uint64_t scan_ts,
                     const ouster::LidarScan& ls,
@@ -41,50 +46,54 @@ class PointCloudProcessorFactory {
                             Profile_RNG19_RFL8_SIG16_NIR16_DUAL.size(),
                             Profile_RNG19_RFL8_SIG16_NIR16_DUAL>(
                             cloud, staging_pt, points, scan_ts, ls,
-                            pixel_shift_by_row, organized, destagger, rows_step);
+                            pixel_shift_by_row, organized, destagger, rows_step,
+                            beam_azimuth.get(), beam_altitude.get(), return_index);
                     } else {
                         scan_to_cloud_f<
                             Profile_RNG19_RFL8_SIG16_NIR16_DUAL_2ND_RETURN.size(),
                             Profile_RNG19_RFL8_SIG16_NIR16_DUAL_2ND_RETURN>(
                             cloud, staging_pt, points, scan_ts, ls,
-                            pixel_shift_by_row, organized, destagger, rows_step);
+                            pixel_shift_by_row, organized, destagger, rows_step,
+                            beam_azimuth.get(), beam_altitude.get(), return_index);
                     }
                 };
 
             case UDPProfileLidar::PROFILE_RNG19_RFL8_SIG16_NIR16:
-                return [organized, destagger, rows_step](
+                return [organized, destagger, rows_step, beam_azimuth, beam_altitude](
                     ouster_ros::Cloud<PointT>& cloud,
                     const ouster::PointsF& points, uint64_t scan_ts,
                     const ouster::LidarScan& ls,
                     const std::vector<int>& pixel_shift_by_row,
-                    int /*return_index*/) {
+                    int return_index) {
 
                     Point_RNG19_RFL8_SIG16_NIR16 staging_pt;
                     scan_to_cloud_f<
                         Profile_RNG19_RFL8_SIG16_NIR16.size(),
                         Profile_RNG19_RFL8_SIG16_NIR16>(
                             cloud, staging_pt, points, scan_ts, ls,
-                            pixel_shift_by_row, organized, destagger, rows_step);
+                            pixel_shift_by_row, organized, destagger, rows_step,
+                            beam_azimuth.get(), beam_altitude.get(), return_index);
                 };
 
             case UDPProfileLidar::PROFILE_RNG15_RFL8_NIR8:
-                return [organized, destagger, rows_step](
+                return [organized, destagger, rows_step, beam_azimuth, beam_altitude](
                     ouster_ros::Cloud<PointT>& cloud,
                     const ouster::PointsF& points, uint64_t scan_ts,
                     const ouster::LidarScan& ls,
                     const std::vector<int>& pixel_shift_by_row,
-                    int /*return_index*/) {
+                    int return_index) {
 
                     Point_RNG15_RFL8_NIR8 staging_pt;
                     scan_to_cloud_f<
                         Profile_RNG15_RFL8_NIR8.size(),
                         Profile_RNG15_RFL8_NIR8>(
                         cloud, staging_pt, points, scan_ts, ls,
-                        pixel_shift_by_row, organized, destagger, rows_step);
+                        pixel_shift_by_row, organized, destagger, rows_step,
+                        beam_azimuth.get(), beam_altitude.get(), return_index);
                 };
 
             case UDPProfileLidar::PROFILE_FUSA_RNG15_RFL8_NIR8_DUAL:
-                return [organized, destagger, rows_step](
+                return [organized, destagger, rows_step, beam_azimuth, beam_altitude](
                     ouster_ros::Cloud<PointT>& cloud,
                     const ouster::PointsF& points, uint64_t scan_ts,
                     const ouster::LidarScan& ls,
@@ -97,13 +106,15 @@ class PointCloudProcessorFactory {
                             Profile_FUSA_RNG15_RFL8_NIR8_DUAL.size(),
                             Profile_FUSA_RNG15_RFL8_NIR8_DUAL>(
                             cloud, staging_pt, points, scan_ts, ls,
-                            pixel_shift_by_row, organized, destagger, rows_step);
+                            pixel_shift_by_row, organized, destagger, rows_step,
+                            beam_azimuth.get(), beam_altitude.get(), return_index);
                     } else {
                         scan_to_cloud_f<
                             Profile_FUSA_RNG15_RFL8_NIR8_DUAL_2ND_RETURN.size(),
                             Profile_FUSA_RNG15_RFL8_NIR8_DUAL_2ND_RETURN>(
                             cloud, staging_pt, points, scan_ts, ls,
-                            pixel_shift_by_row, organized, destagger, rows_step);
+                            pixel_shift_by_row, organized, destagger, rows_step,
+                            beam_azimuth.get(), beam_altitude.get(), return_index);
                     }
                 };
 

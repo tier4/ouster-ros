@@ -148,24 +148,24 @@ struct PointXYZIRCAEDT : public _PointXYZIRCAEDT {
     }
 
     inline const auto as_tuple() const {
-        return std::tie(x, y, z, 
-                        intensity, 
-                        return_type, 
-                        ring, 
-                        azimuth, 
-                        elevation, 
-                        range, 
+        return std::tie(x, y, z,
+                        intensity,
+                        return_type,
+                        ring,
+                        azimuth,
+                        elevation,
+                        range,
                         time);
     }
 
     inline auto as_tuple() {
-        return std::tie(x, y, z, 
-                        intensity, 
-                        return_type, 
-                        ring, 
-                        azimuth, 
-                        elevation, 
-                        range, 
+        return std::tie(x, y, z,
+                        intensity,
+                        return_type,
+                        ring,
+                        azimuth,
+                        elevation,
+                        range,
                         time);
     }
 
