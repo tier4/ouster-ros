@@ -187,11 +187,16 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
             // AFTER transform. These fields do not exist in staging_point types
             // so we set them directly on cloud.points[tgt_idx] for PointXYZIRCAEDT
             if constexpr (point::has_azimuth_v<PointT>) {
-                if (beam_azimuth_angles && v < beam_azimuth_angles->size()) {
+                // beam_azimuth_angles should be indexed by beam position (column)
+                // in the cloud (destaggered), which is v
+                if (beam_azimuth_angles && v < beam_azimuth_angles->size() &&
+                    beam_azimuth_angles->size() > 0) {
                     cloud.points[tgt_idx].azimuth =
                         static_cast<float>((*beam_azimuth_angles)[v]);
                 } else {
-                    cloud.points[tgt_idx].azimuth = 0.0f;
+                    // If beam_azimuth_angles is not available or invalid, compute from v
+                    cloud.points[tgt_idx].azimuth =
+                        static_cast<float>((2.0 * M_PI * v) / ls.w - M_PI);
                 }
             }
 
