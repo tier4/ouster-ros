@@ -214,7 +214,9 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
             }
 
             if constexpr (point::has_time_stamp_v<PointT>) {
-                cloud.points[tgt_idx].time_stamp = static_cast<double>(ts) * 1e-9;
+                // Use timestamp directly from LidarScan, converted to seconds
+                cloud.points[tgt_idx].time_stamp =
+                    static_cast<double>(timestamp[ts_idx]) * 1e-9;
             }
 
             if constexpr (point::has_channel_v<PointT>) {
