@@ -132,6 +132,9 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
     if (!organized) cloud.clear();
     cloud.is_dense = true;
 
+    static const auto range_flat =
+        ls.field<uint32_t>(sensor::ChanField::RANGE).reshaped().eval();
+
     for (auto u = 0; u < ls.h; u += rows_step) {
         for (auto v = 0; v < ls.w; ++v) {   // TODO[UN]: consider cols_step in future
             const auto v_shift =
@@ -206,12 +209,7 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
 
             // range in meters (computed from xyz)
             if constexpr (point::has_range_v<PointT>) {
-                const auto& xyz_tuple = cloud.points[tgt_idx];
-                const float x = xyz_tuple.x;
-                const float y = xyz_tuple.y;
-                const float z = xyz_tuple.z;
-                cloud.points[tgt_idx].range =
-                    std::sqrt(x * x + y * y + z * z);
+                cloud.points[tgt_idx].range = (range_flat(src_idx)) * 0.001f;
             }
 
             // return_type (0 for first return, 1 for second, etc.)
