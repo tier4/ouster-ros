@@ -206,7 +206,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(ouster_ros::PointXYZIRCAEDT,
     (float, azimuth, azimuth)                   // Azimuth
     (float, elevation, elevation)               // Elevation
     (float, distance, distance)                    // Distance == range
-    (std::uint32_t, time_stamp  , timestamp)            // Timestamp
+    (std::uint32_t, time_stamp  , time_stamp)            // Timestamp
 )
 
 // clang-format on
