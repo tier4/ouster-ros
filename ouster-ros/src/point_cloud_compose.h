@@ -175,6 +175,51 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
             pt.ring = static_cast<uint16_t>(u);
             copy_lidar_scan_fields_to_point<0>(pt, ls_tuple, src_idx);
 
+            // Set Autoware-specific fields using pt reference pattern
+            // This ensures fields are set consistently on both staging_point and cloud
+
+            // azimuth angle (in radians)
+            if constexpr (point::has_azimuth_v<PointT> ||
+                         point::has_azimuth_v<PointS>) {
+                if constexpr (point::has_azimuth_v<decltype(pt)>) {
+                    if (beam_azimuth_angles && v < beam_azimuth_angles->size()) {
+                        pt.azimuth = static_cast<float>((*beam_azimuth_angles)[v]);
+                    } else {
+                        pt.azimuth = 0.0f;
+                    }
+                }
+            }
+
+            // elevation angle (in radians)
+            if constexpr (point::has_elevation_v<PointT> ||
+                         point::has_elevation_v<PointS>) {
+                if constexpr (point::has_elevation_v<decltype(pt)>) {
+                    if (beam_altitude_angles && u < beam_altitude_angles->size()) {
+                        pt.elevation = static_cast<float>((*beam_altitude_angles)[u]);
+                    } else {
+                        pt.elevation = 0.0f;
+                    }
+                }
+            }
+
+            // range in meters - from LidarScan RANGE field
+            if constexpr (point::has_range_v<PointT> ||
+                         point::has_range_v<PointS>) {
+                if constexpr (point::has_range_v<decltype(pt)>) {
+                    // Get range from LidarScan, convert from mm to m
+                    auto range_field = ls.field<uint32_t>(sensor::ChanField::RANGE);
+                    pt.range = static_cast<float>(range_field(u, v_shift)) * 0.001f;
+                }
+            }
+
+            // return_type (0 for first return, 1 for second, etc.)
+            if constexpr (point::has_return_type_v<PointT> ||
+                         point::has_return_type_v<PointS>) {
+                if constexpr (point::has_return_type_v<decltype(pt)>) {
+                    pt.return_type = static_cast<uint8_t>(return_index);
+                }
+            }
+
             // only perform point transform operation when PointT, and PointS
             // don't match
             CondBinaryOp<!std::is_same_v<PointT, PointS>>::run(
@@ -182,43 +227,6 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                 [](auto& tgt_pt, const auto& src_pt) {
                     point::transform(tgt_pt, src_pt);
                 });
-
-            // Set Autoware-specific fields for PointXYZIRCAEDT after transform
-            // azimuth angle (in radians)
-            if constexpr (point::has_azimuth_v<PointT>) {
-                if (beam_azimuth_angles && v < beam_azimuth_angles->size()) {
-                    cloud.points[tgt_idx].azimuth =
-                        static_cast<float>((*beam_azimuth_angles)[v]);
-                } else {
-                    cloud.points[tgt_idx].azimuth = 0.0f;
-                }
-            }
-
-            // elevation angle (in radians)
-            if constexpr (point::has_elevation_v<PointT>) {
-                if (beam_altitude_angles && u < beam_altitude_angles->size()) {
-                    cloud.points[tgt_idx].elevation =
-                        static_cast<float>((*beam_altitude_angles)[u]);
-                } else {
-                    cloud.points[tgt_idx].elevation = 0.0f;
-                }
-            }
-
-            // range in meters (computed from xyz)
-            if constexpr (point::has_range_v<PointT>) {
-                const auto& xyz_tuple = cloud.points[tgt_idx];
-                const float x = xyz_tuple.x;
-                const float y = xyz_tuple.y;
-                const float z = xyz_tuple.z;
-                cloud.points[tgt_idx].range =
-                    std::sqrt(x * x + y * y + z * z);
-            }
-
-            // return_type (0 for first return, 1 for second, etc.)
-            if constexpr (point::has_return_type_v<PointT>) {
-                cloud.points[tgt_idx].return_type =
-                    static_cast<uint8_t>(return_index);
-            }
         }
     }
 }
