@@ -186,10 +186,16 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
             // Set Autoware-specific fields (azimuth, elevation, range, return_type, time)
             // AFTER transform. These fields do not exist in staging_point types
             // so we set them directly on cloud.points[tgt_idx] for PointXYZIRCAEDT
+            if constexpr (point::has_intensity_v<PointT>) {
+                auto signal_field = ls.field<uint32_t>(sensor::ChanField::SIGNAL);
+                cloud.points[tgt_idx].intensity =
+                    static_cast<uint8_t>(signal_field(u, v_shift) >> 8);
+            }
+
             if constexpr (point::has_azimuth_v<PointT>) {
-                if (beam_azimuth_angles && v < beam_azimuth_angles->size()) {
+                if (beam_azimuth_angles && v_shift < beam_azimuth_angles->size()) {
                     cloud.points[tgt_idx].azimuth =
-                        static_cast<float>((*beam_azimuth_angles)[v]);
+                        static_cast<float>((*beam_azimuth_angles)[v_shift]);
                 } else {
                     cloud.points[tgt_idx].azimuth = 0.0f;
                 }
