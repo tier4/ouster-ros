@@ -183,7 +183,7 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                     point::transform(tgt_pt, src_pt);
                 });
 
-            // Set Autoware-specific fields (azimuth, elevation, range, return_type)
+            // Set Autoware-specific fields (azimuth, elevation, range, return_type, time)
             // AFTER transform. These fields do not exist in staging_point types
             // so we set them directly on cloud.points[tgt_idx] for PointXYZIRCAEDT
             if constexpr (point::has_azimuth_v<PointT>) {
@@ -204,15 +204,23 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                 }
             }
 
-            if constexpr (point::has_range_v<PointT>) {
+            if constexpr (point::has_distance_v<PointT>) {
                 auto range_field = ls.field<uint32_t>(sensor::ChanField::RANGE);
-                cloud.points[tgt_idx].range =
+                cloud.points[tgt_idx].distance =
                     static_cast<float>(range_field(u, v_shift)) * 0.001f;
             }
 
             if constexpr (point::has_return_type_v<PointT>) {
                 cloud.points[tgt_idx].return_type =
                     static_cast<uint8_t>(return_index);
+            }
+
+            if constexpr (point::has_time_stamp_v<PointT>) {
+                cloud.points[tgt_idx].time_stamp = static_cast<double>(ts) * 1e-9;
+            }
+
+            if constexpr (point::has_channel_v<PointT>) {
+                cloud.points[tgt_idx].channel = static_cast<uint16_t>(u);
             }
         }
     }

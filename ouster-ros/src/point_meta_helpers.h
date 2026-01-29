@@ -78,7 +78,9 @@ namespace point {
 DEFINE_MEMBER_CHECKER(azimuth);
 DEFINE_MEMBER_CHECKER(elevation);
 DEFINE_MEMBER_CHECKER(return_type);
-
+DEFINE_MEMBER_CHECKER(time_stamp);
+DEFINE_MEMBER_CHECKER(channel);
+DEFINE_MEMBER_CHECKER(distance);
 /**
  * @brief A compile-time function to retrieve the number of elements that a
  * certain pcl point type has
@@ -133,15 +135,15 @@ inline constexpr auto& get<3, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZI
 template <>
 inline constexpr auto& get<4, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.return_type; }
 template <>
-inline constexpr auto& get<5, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.ring; }
+inline constexpr auto& get<5, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.channel; }
 template <>
 inline constexpr auto& get<6, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.azimuth; }
 template <>
 inline constexpr auto& get<7, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.elevation; }
 template <>
-inline constexpr auto& get<8, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.range; }
+inline constexpr auto& get<8, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.distance; }
 template <>
-inline constexpr auto& get<9, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.time; }
+inline constexpr auto& get<9, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.time_stamp; }
 
 // TODO: create a generalized vardiac templates of apply and enumerate functions
 
