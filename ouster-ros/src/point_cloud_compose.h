@@ -175,10 +175,18 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
             pt.ring = static_cast<uint16_t>(u);
             copy_lidar_scan_fields_to_point<0>(pt, ls_tuple, src_idx);
 
-            // Set Autoware-specific fields BEFORE transform
-            // This works for both PointT == PointS and PointT != PointS cases
+            // only perform point transform operation when PointT, and PointS
+            // don't match
+            CondBinaryOp<!std::is_same_v<PointT, PointS>>::run(
+                cloud.points[tgt_idx], staging_point,
+                [](auto& tgt_pt, const auto& src_pt) {
+                    point::transform(tgt_pt, src_pt);
+                });
+
+            // Set Autoware-specific fields for PointXYZIRCAEDT on target point
             if constexpr (point::has_azimuth_v<PointT>) {
-                if (beam_azimuth_angles && v < beam_azimuth_angles->size()) {
+                if (beam_azimuth_angles &&
+                    static_cast<size_t>(v) < beam_azimuth_angles->size()) {
                     cloud.points[tgt_idx].azimuth =
                         static_cast<float>((*beam_azimuth_angles)[v]);
                 } else {
@@ -187,7 +195,8 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
             }
 
             if constexpr (point::has_elevation_v<PointT>) {
-                if (beam_altitude_angles && u < beam_altitude_angles->size()) {
+                if (beam_altitude_angles &&
+                    static_cast<size_t>(u) < beam_altitude_angles->size()) {
                     cloud.points[tgt_idx].elevation =
                         static_cast<float>((*beam_altitude_angles)[u]);
                 } else {
@@ -202,16 +211,9 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
             }
 
             if constexpr (point::has_return_type_v<PointT>) {
-                cloud.points[tgt_idx].return_type = static_cast<uint8_t>(return_index);
+                cloud.points[tgt_idx].return_type =
+                    static_cast<uint8_t>(return_index);
             }
-
-            // only perform point transform operation when PointT, and PointS
-            // don't match
-            CondBinaryOp<!std::is_same_v<PointT, PointS>>::run(
-                cloud.points[tgt_idx], staging_point,
-                [](auto& tgt_pt, const auto& src_pt) {
-                    point::transform(tgt_pt, src_pt);
-                });
         }
     }
 }
