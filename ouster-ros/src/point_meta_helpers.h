@@ -81,7 +81,6 @@ DEFINE_MEMBER_CHECKER(return_type);
 DEFINE_MEMBER_CHECKER(time_stamp);
 DEFINE_MEMBER_CHECKER(channel);
 DEFINE_MEMBER_CHECKER(distance);
-DEFINE_MEMBER_CHECKER(intensity);
 /**
  * @brief A compile-time function to retrieve the number of elements that a
  * certain pcl point type has
