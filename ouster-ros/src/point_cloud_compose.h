@@ -183,14 +183,26 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                     point::transform(tgt_pt, src_pt);
                 });
 
-            // Set Autoware-specific fields (azimuth, elevation, range, return_type, time)
-            // AFTER transform. These fields do not exist in staging_point types
-            // so we set them directly on cloud.points[tgt_idx] for PointXYZIRCAEDT
+            // Set Autoware-specific fields (azimuth, elevation, distance)
             if constexpr (point::has_azimuth_v<PointT>) {
-                // Compute azimuth from beam position (v) in the cloud
-                // Map column index to azimuth angle: -π to +π
-                cloud.points[tgt_idx].azimuth =
-                    static_cast<float>((2.0 * M_PI * v) / ls.w - M_PI);
+                if (beam_azimuth_angles && u < static_cast<int>(beam_azimuth_angles->size())) {
+                    // Encoder angle from LidarScan measurement_id (from packet Column Header)
+                    // v_shift is the column index for the data we read (destaggered)
+                    const uint16_t measurement_id = ls.measurement_id()(v_shift);
+                    const float encoder_angle =
+                        static_cast<float>((2.0 * M_PI * measurement_id) / ls.w);
+                    // beam_azimuth_angles[u] is in degrees; convert to radians
+                    const float beam_azimuth_rad =
+                        static_cast<float>((*beam_azimuth_angles)[u] * M_PI / 180.0);
+                    float azimuth_rad = encoder_angle + beam_azimuth_rad;
+                    // Normalize to [0, 2π)
+                    const float two_pi = 2.0f * static_cast<float>(M_PI);
+                    while (azimuth_rad < 0.0f) azimuth_rad += two_pi;
+                    while (azimuth_rad >= two_pi) azimuth_rad -= two_pi;
+                    cloud.points[tgt_idx].azimuth = azimuth_rad;
+                } else {
+                    cloud.points[tgt_idx].azimuth = 0.0f;
+                }
             }
 
             if constexpr (point::has_elevation_v<PointT>) {
@@ -206,19 +218,6 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                 auto range_field = ls.field<uint32_t>(sensor::ChanField::RANGE);
                 cloud.points[tgt_idx].distance =
                     static_cast<float>(range_field(u, v_shift)) * 0.001f;
-            }
-
-            if constexpr (point::has_return_type_v<PointT>) {
-                cloud.points[tgt_idx].return_type =
-                    static_cast<uint8_t>(return_index);
-            }
-
-            if constexpr (point::has_time_stamp_v<PointT>) {
-                cloud.points[tgt_idx].time_stamp = static_cast<uint32_t>(ts);
-            }
-
-            if constexpr (point::has_channel_v<PointT>) {
-                cloud.points[tgt_idx].channel = static_cast<uint16_t>(u);
             }
         }
     }

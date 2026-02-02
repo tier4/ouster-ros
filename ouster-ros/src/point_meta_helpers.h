@@ -131,11 +131,11 @@ inline constexpr auto& get<1, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZI
 template <>
 inline constexpr auto& get<2, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.z; }
 template <>
-inline constexpr auto& get<3, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.intensity; }
+inline constexpr auto& get<3, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.reflectivity; }
 template <>
 inline constexpr auto& get<4, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.return_type; }
 template <>
-inline constexpr auto& get<5, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.channel; }
+inline constexpr auto& get<5, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.ring; }
 template <>
 inline constexpr auto& get<6, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.azimuth; }
 template <>
@@ -143,7 +143,7 @@ inline constexpr auto& get<7, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZI
 template <>
 inline constexpr auto& get<8, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.distance; }
 template <>
-inline constexpr auto& get<9, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.time_stamp; }
+inline constexpr auto& get<9, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.t; }
 
 // TODO: create a generalized vardiac templates of apply and enumerate functions
 

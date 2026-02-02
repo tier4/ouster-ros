@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "point_meta_helpers.h"
 
 namespace ouster_ros {
@@ -76,14 +74,9 @@ void transform(PointTGT& tgt_pt, const PointSRC& src_pt) {
 
     // intensity <- signal
     // PointTGT should not have signal and intensity at the same time [normally]
-    // XYZIRCAEDT uses uint8_t intensity -> apply >> 8; XYZI/XYZIR use float -> use signal as-is
     CondBinaryOp<has_intensity_v<PointTGT> && has_signal_v<PointSRC>>::run(
         tgt_pt, src_pt, [](auto& tgt_pt, const auto& src_pt) {
-            if constexpr (std::is_same_v<decltype(tgt_pt.intensity), std::uint8_t>) {
-                tgt_pt.intensity = static_cast<std::uint8_t>(src_pt.signal >> 8);
-            } else {
-                tgt_pt.intensity = static_cast<decltype(tgt_pt.intensity)>(src_pt.signal);
-            }
+            tgt_pt.intensity = static_cast<decltype(tgt_pt.intensity)>(src_pt.signal);
         }
     );
 
