@@ -20,6 +20,13 @@
 
 namespace ouster_ros {
 
+// 事前に定義しておくメタ関数
+template <typename T, typename = void>
+struct has_t_field : std::false_type {};
+
+template <typename T>
+struct has_t_field<T, std::void_t<decltype(std::declval<T>().t)>> : std::true_type {};
+
 // Moved out of PointCloudProcessor to avoid type templatization
 using PointCloudProcessor_OutputType =
     std::vector<std::shared_ptr<sensor_msgs::msg::PointCloud2>>;
@@ -76,8 +83,17 @@ class PointCloudProcessor {
 
    private:
     template <typename T>
-    void pcl_toROSMsg(const ouster_ros::Cloud<T>& pcl_cloud,
+    void pcl_toROSMsg(ouster_ros::Cloud<T>& pcl_cloud,
                       sensor_msgs::msg::PointCloud2& cloud) {
+
+        // コンパイル時にフィールド 't' の有無を判定してソート
+        // PointXYZIRCAEDT は 't' フィールドを持つため、このブロックが有効になる
+        if constexpr (has_t_field<T>::value) {
+            std::sort(pcl_cloud.points.begin(), pcl_cloud.points.end(),
+                [](const T& a, const T& b) {
+                    return a.t < b.t;
+                });
+        }
         // TODO: remove the staging step in the future
         pcl::toPCLPointCloud2(pcl_cloud, staging_pcl_pc2);
         pcl_conversions::moveFromPCL(staging_pcl_pc2, cloud);
