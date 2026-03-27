@@ -106,14 +106,16 @@ struct PointXYZIR : public _PointXYZIR {
  * Same as Autoware point cloud type
  */
 struct EIGEN_ALIGN16 _PointXYZIRCAEDT {
-    PCL_ADD_POINT4D;
-    uint8_t intensity;        // Intensity
+    float x;
+    float y;
+    float z;
+    uint8_t reflectivity;     // Intensity == Reflectivity
     uint8_t return_type;      // Return type
     uint16_t ring;            // Channel == ring
     float azimuth;            // Azimuth
     float elevation;          // Elevation
-    float range;              // Distance == range
-    uint32_t time;            // Timestamp
+    float distance;           // Distance == range * 1000
+    uint32_t t;               // Timestamp == t
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
@@ -124,49 +126,47 @@ struct PointXYZIRCAEDT : public _PointXYZIRCAEDT {
       x = pt.x;
       y = pt.y;
       z = pt.z;
-      data[3] = 1.0f;
-      intensity = pt.intensity;
+      reflectivity = pt.reflectivity;
       return_type = pt.return_type;
       ring = pt.ring;
       azimuth = pt.azimuth;
       elevation = pt.elevation;
-      range = pt.range;
-      time = pt.time;
+      distance = pt.distance;
+      t = pt.t;
     }
 
     inline PointXYZIRCAEDT()
     {
       x = y = z = 0.0f;
-      data[3] = 1.0f;
-      intensity = 0.0f;
+      reflectivity = 0.0f;
       return_type = 0;
       ring = 0;
       azimuth = 0.0f;
       elevation = 0.0f;
-      range = 0.0f;
-      time = 0.0f;
+      distance = 0.0f;
+      t = 0.0f;
     }
 
     inline const auto as_tuple() const {
-        return std::tie(x, y, z, 
-                        intensity, 
-                        return_type, 
-                        ring, 
-                        azimuth, 
-                        elevation, 
-                        range, 
-                        time);
+        return std::tie(x, y, z,
+                        reflectivity,
+                        return_type,
+                        ring,
+                        azimuth,
+                        elevation,
+                        distance,
+                        t);
     }
 
     inline auto as_tuple() {
-        return std::tie(x, y, z, 
-                        intensity, 
-                        return_type, 
-                        ring, 
-                        azimuth, 
-                        elevation, 
-                        range, 
-                        time);
+        return std::tie(x, y, z,
+                        reflectivity,
+                        return_type,
+                        ring,
+                        azimuth,
+                        elevation,
+                        distance,
+                        t);
     }
 
     template<size_t I>
@@ -200,13 +200,13 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(ouster_ros::PointXYZIRCAEDT,
     (float, x, x)
     (float, y, y)
     (float, z, z)
-    (std::uint8_t, intensity, intensity)        // Intensity
+    (std::uint8_t, reflectivity, intensity)     // Intensity == reflectivity
     (std::uint8_t, return_type, return_type)    // Return type
     (std::uint16_t, ring, channel)              // Channel == ring
     (float, azimuth, azimuth)                   // Azimuth
     (float, elevation, elevation)               // Elevation
-    (float, range, distance)                    // Distance == range
-    (std::uint32_t, time, timestamp)            // Timestamp
+    (float, distance, distance)                 // Distance == range * 1000
+    (std::uint32_t, t  , time_stamp)            // Timestamp == t
 )
 
 // clang-format on

@@ -122,7 +122,10 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                      const ouster::LidarScan& ls,
                      const std::vector<int>& pixel_shift_by_row,
                      bool organized = false, bool destagger = true,
-                     int rows_step = 1) {
+                     int rows_step = 1,
+                     const std::vector<double>* beam_azimuth_angles = nullptr,
+                     const std::vector<double>* beam_altitude_angles = nullptr,
+                     int return_index = 0) {
     auto ls_tuple = make_lidar_scan_tuple<0, N, PROFILE>(ls);
     auto timestamp = ls.timestamp();
 
@@ -171,6 +174,7 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
             pt.t = static_cast<uint32_t>(ts);
             pt.ring = static_cast<uint16_t>(u);
             copy_lidar_scan_fields_to_point<0>(pt, ls_tuple, src_idx);
+
             // only perform point transform operation when PointT, and PointS
             // don't match
             CondBinaryOp<!std::is_same_v<PointT, PointS>>::run(
@@ -178,6 +182,43 @@ void scan_to_cloud_f(ouster_ros::Cloud<PointT>& cloud, PointS& staging_point,
                 [](auto& tgt_pt, const auto& src_pt) {
                     point::transform(tgt_pt, src_pt);
                 });
+
+            // Set Autoware-specific fields (azimuth, elevation, distance)
+            if constexpr (point::has_azimuth_v<PointT>) {
+                if (beam_azimuth_angles && u < static_cast<int>(beam_azimuth_angles->size())) {
+                    // Encoder angle from LidarScan measurement_id (from packet Column Header)
+                    // v_shift is the column index for the data we read (destaggered)
+                    const uint16_t measurement_id = ls.measurement_id()(v_shift);
+                    const float encoder_angle =
+                        static_cast<float>((2.0 * M_PI * measurement_id) / ls.w);
+                    // beam_azimuth_angles[u] is in degrees; convert to radians
+                    const float beam_azimuth_rad =
+                        static_cast<float>((*beam_azimuth_angles)[u] * M_PI / 180.0);
+                    float azimuth_rad = encoder_angle + beam_azimuth_rad;
+                    // Normalize to [0, 2π)
+                    const float two_pi = 2.0f * static_cast<float>(M_PI);
+                    while (azimuth_rad < 0.0f) azimuth_rad += two_pi;
+                    while (azimuth_rad >= two_pi) azimuth_rad -= two_pi;
+                    cloud.points[tgt_idx].azimuth = azimuth_rad;
+                } else {
+                    cloud.points[tgt_idx].azimuth = 0.0f;
+                }
+            }
+
+            if constexpr (point::has_elevation_v<PointT>) {
+                if (beam_altitude_angles && u < beam_altitude_angles->size()) {
+                    cloud.points[tgt_idx].elevation =
+                        static_cast<float>((*beam_altitude_angles)[u]);
+                } else {
+                    cloud.points[tgt_idx].elevation = 0.0f;
+                }
+            }
+
+            if constexpr (point::has_distance_v<PointT>) {
+                auto range_field = ls.field<uint32_t>(sensor::ChanField::RANGE);
+                cloud.points[tgt_idx].distance =
+                    static_cast<float>(range_field(u, v_shift)) * 0.001f;
+            }
         }
     }
 }

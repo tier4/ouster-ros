@@ -19,8 +19,8 @@ class PointAccessorTest : public ::testing::Test {
         pt_xyz = pcl::_PointXYZ{0.0f, 1.0f, 2.0f, 1.0f};
         pt_xyzi = pcl::_PointXYZI{{0.0f, 1.0f, 2.0f, 1.0}, 3.0f};
         pt_xyzir = ouster_ros::_PointXYZIR{{0.0f, 1.0f, 2.0f, 1.0f}, 3.0f, 4};
-        pt_xyzircaedt = ouster_ros::_PointXYZIRCAEDT{{0.0f, 1.0f, 2.0f, 1.0f}, 
-                                                    50, 1, 4, 
+        pt_xyzircaedt = ouster_ros::_PointXYZIRCAEDT{0.0f, 1.0f, 2.0f,
+                                                    50, 1, 4,
                                                     0.5f, 0.5f, 10.0f, 1000000};
 
         pt_legacy = ouster_ros::_Point_LEGACY{

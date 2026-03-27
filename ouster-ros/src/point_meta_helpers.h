@@ -74,8 +74,15 @@ struct CondBinaryBind {
 
 namespace point {
 
+// Member checkers for dynamic field detection
+DEFINE_MEMBER_CHECKER(azimuth);
+DEFINE_MEMBER_CHECKER(elevation);
+DEFINE_MEMBER_CHECKER(return_type);
+DEFINE_MEMBER_CHECKER(time_stamp);
+DEFINE_MEMBER_CHECKER(channel);
+DEFINE_MEMBER_CHECKER(distance);
 /**
- * @brief A compile-time function to retrieve the number of elements that a 
+ * @brief A compile-time function to retrieve the number of elements that a
  * certain pcl point type has
  * @param[in] point a pcl point type
  * @return the number of elements that a point has
@@ -91,8 +98,11 @@ inline constexpr std::size_t size<pcl::PointXYZ>(const pcl::PointXYZ&) { return 
 template <>
 inline constexpr std::size_t size<pcl::PointXYZI>(const pcl::PointXYZI&) { return 4U; }
 
+template <>
+inline constexpr std::size_t size<ouster_ros::PointXYZIRCAEDT>(const ouster_ros::PointXYZIRCAEDT&) { return 10U; }
+
 // generic accessor that avoid having to type template before get
-template <size_t I, typename T> 
+template <size_t I, typename T>
 inline constexpr auto& get(T& point) { return point.template get<I>(); }
 
 // pcl::PointXYZ compile time element accessors
@@ -112,6 +122,28 @@ template <>
 inline  constexpr auto& get<2, pcl::PointXYZI>(pcl::PointXYZI& point) { return point.z; }
 template <>
 inline  constexpr auto& get<3, pcl::PointXYZI>(pcl::PointXYZI& point) { return point.intensity; }
+
+// ouster_ros::PointXYZIRCAEDT compile time element accessors
+template <>
+inline constexpr auto& get<0, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.x; }
+template <>
+inline constexpr auto& get<1, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.y; }
+template <>
+inline constexpr auto& get<2, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.z; }
+template <>
+inline constexpr auto& get<3, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.reflectivity; }
+template <>
+inline constexpr auto& get<4, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.return_type; }
+template <>
+inline constexpr auto& get<5, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.ring; }
+template <>
+inline constexpr auto& get<6, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.azimuth; }
+template <>
+inline constexpr auto& get<7, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.elevation; }
+template <>
+inline constexpr auto& get<8, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.distance; }
+template <>
+inline constexpr auto& get<9, ouster_ros::PointXYZIRCAEDT>(ouster_ros::PointXYZIRCAEDT& point) { return point.t; }
 
 // TODO: create a generalized vardiac templates of apply and enumerate functions
 
